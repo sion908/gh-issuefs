@@ -1,2 +1,4 @@
 gh-issuefs
-.design
+gh-issuefs-*
+.design/
+sample/

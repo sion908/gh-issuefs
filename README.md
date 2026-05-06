@@ -6,6 +6,17 @@ A [GitHub CLI](https://cli.github.com/) extension to sync GitHub Issues to local
 
 ---
 
+## Motivation
+
+This tool was created to manage GitHub Issues locally as Markdown files, making them:
+- **AI-friendly**: Structured Markdown with YAML frontmatter is easy for AI assistants to read and understand
+- **Editable**: Modify issues locally and push changes back to GitHub
+- **Plan-driven**: Use local issue files to create detailed implementation plans (e.g., `.design/plan.md`)
+
+By keeping issues as local files, you can leverage AI tools for planning, documentation, and code generation while maintaining GitHub as the single source of truth.
+
+---
+
 ## Overview
 
 `gh-issuefs` keeps GitHub Issues in sync with local Markdown files under `.design/issues/`.  

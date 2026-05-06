@@ -6,6 +6,18 @@ GitHub Issue をローカルファイルに同期し、設計メモやタスク�
 
 ---
 
+## 経緯
+
+このツールは GitHub Issue をローカルの Markdown ファイルとして管理するために作成されました。以下の目的があります：
+
+- **AI 対応**: YAML frontmatter 付きの構造化された Markdown は、AI アシスタントが読み取りやすく理解しやすい
+- **編集可能**: ローカルで Issue を修正し、変更を GitHub に反映できる
+- **計画駆動**: ローカルの Issue ファイルを使って詳細な実装計画（例: `.design/plan.md`）を作成できる
+
+Issue をローカルファイルとして保持することで、AI ツールを活用して計画・ドキュメント・コード生成を行いながら、GitHub を単一の真実の情報源として維持できます。
+
+---
+
 ## 概要
 
 `gh-issuefs` は GitHub Issue を `.design/issues/` 配下のローカル Markdown ファイルとして同期します。  
