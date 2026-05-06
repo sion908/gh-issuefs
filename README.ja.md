@@ -213,3 +213,9 @@ projects_v2:
 ## ライセンス
 
 MIT
+
+---
+
+## ワークフロー
+
+AI アシスト付きのワークフローについては [WORKFLOWS.md](./WORKFLOWS.md) を参照してください。

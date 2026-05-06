@@ -212,3 +212,9 @@ projects_v2:
 ## License
 
 MIT
+
+---
+
+## Workflows
+
+For AI-assisted workflows, see [WORKFLOWS.md](./WORKFLOWS.md).
