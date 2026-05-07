@@ -99,12 +99,12 @@ func WriteFile(path string, iss Issue) error {
 
 // SampleFrontMatter returns a FrontMatter suitable for a new issue template.
 func SampleFrontMatter(title string) FrontMatter {
-	emptyLabels := []string{}
+	sampleLabels := []string{"enhancement"}
 	emptyAssignees := []string{}
 	nilMilestone := (*string)(nil)
 	return FrontMatter{
 		Title:     title,
-		Labels:    emptyLabels,
+		Labels:    sampleLabels,
 		Assignees: emptyAssignees,
 		Milestone: nilMilestone,
 	}
