@@ -21,8 +21,8 @@ func TestDefault(t *testing.T) {
 	if !cfg.Sync.IncludeComments {
 		t.Error("expected IncludeComments true")
 	}
-	if !cfg.Sync.ExcludePullRequests {
-		t.Error("expected ExcludePullRequests true")
+	if cfg.Sync.ExcludePullRequests {
+		t.Error("expected ExcludePullRequests false")
 	}
 	if cfg.Storage.SaveRaw {
 		t.Error("expected SaveRaw false")

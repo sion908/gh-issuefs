@@ -45,10 +45,6 @@ func (a *App) Pull(ctx context.Context, opts PullOptions, numbers []string) erro
 			if err != nil {
 				return fmt.Errorf("failed to fetch issue #%d: %w", n, err)
 			}
-			if ri.IsPullRequest {
-				fmt.Fprintf(a.Err, "skipping #%d (pull request)\n", n)
-				continue
-			}
 			remoteIssues = append(remoteIssues, ri)
 		}
 	} else {

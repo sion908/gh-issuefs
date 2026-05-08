@@ -58,7 +58,7 @@ func Default() Config {
 		Sync: SyncConfig{
 			DefaultQuery:        "assignee:@me state:open",
 			IncludeComments:     true,
-			ExcludePullRequests: true,
+			ExcludePullRequests: false,
 		},
 		Storage: StorageConfig{
 			SaveRaw: false,

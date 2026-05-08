@@ -103,6 +103,11 @@ func (a *App) pushIssue(ctx context.Context, p paths.Paths, client *ghcli.Client
 
 	number := meta.Number
 
+	// Block push for pull requests
+	if meta.IsPullRequest {
+		return false, fmt.Errorf("pull requests cannot be pushed (read-only)")
+	}
+
 	// Show diff
 	fmt.Fprintf(a.Out, "--- #%d %s ---\n", number, meta.Title)
 	printDiff(a.Out, meta.Title, iss.FrontMatter.Title, "title")
