@@ -89,6 +89,7 @@ gh issuefs pull 123 124 125
 gh issuefs pull --save-raw
 ```
 
+- Pull requests can also be pulled (read-only).
 - If `issue.md` has local uncommitted changes, they are automatically backed up to `issue.local.md` before overwriting.
 
 ---
@@ -110,6 +111,8 @@ gh issuefs push --dry-run
 # Create new issues from unnumbered directories
 gh issuefs push --new
 ```
+
+- Pull requests cannot be pushed (read-only).
 
 ---
 
@@ -161,7 +164,7 @@ issues_dir = "issues"
 [sync]
 default_query        = "assignee:@me state:open"
 include_comments     = true
-exclude_pull_requests = true
+exclude_pull_requests = false
 
 [storage]
 save_raw = false

@@ -90,6 +90,7 @@ gh issuefs pull 123 124 125
 gh issuefs pull --save-raw
 ```
 
+- Pull Request も pull できます（読み取り専用）。
 - `issue.md` にローカルの未同期変更がある場合、上書き前に自動的に `issue.local.md` としてバックアップされます。
 
 ---
@@ -111,6 +112,8 @@ gh issuefs push --dry-run
 # 番号未設定のディレクトリから新規 Issue を作成
 gh issuefs push --new
 ```
+
+- Pull Request は push できません（読み取り専用）。
 
 ---
 
@@ -162,7 +165,7 @@ issues_dir = "issues"
 [sync]
 default_query        = "assignee:@me state:open"
 include_comments     = true
-exclude_pull_requests = true
+exclude_pull_requests = false
 
 [storage]
 save_raw = false
