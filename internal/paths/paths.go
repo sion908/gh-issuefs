@@ -10,17 +10,20 @@ type Paths struct {
 	Root       string
 	DesignDir  string
 	IssuesDir  string
+	PrDirPath  string
 	ConfigPath string
 	RawDir     string
 }
 
-func New(root, designDir, issuesDir string) Paths {
+func New(root, designDir, issuesDir, prDir string) Paths {
 	dd := filepath.Join(root, designDir)
 	id := filepath.Join(dd, issuesDir)
+	pd := filepath.Join(dd, prDir)
 	return Paths{
 		Root:       root,
 		DesignDir:  dd,
 		IssuesDir:  id,
+		PrDirPath:  pd,
 		ConfigPath: filepath.Join(dd, "config.toml"),
 		RawDir:     filepath.Join(dd, "raw"),
 	}
@@ -30,16 +33,32 @@ func (p Paths) IssueDir(name string) string {
 	return filepath.Join(p.IssuesDir, name)
 }
 
+func (p Paths) PrDir(name string) string {
+	return filepath.Join(p.PrDirPath, name)
+}
+
 func (p Paths) IssueMDPath(dirName string) string {
 	return filepath.Join(p.IssuesDir, dirName, "issue.md")
+}
+
+func (p Paths) PrMDPath(dirName string) string {
+	return filepath.Join(p.PrDirPath, dirName, "issue.md")
 }
 
 func (p Paths) CommentsPath(dirName string) string {
 	return filepath.Join(p.IssuesDir, dirName, "comments.json")
 }
 
+func (p Paths) PrCommentsPath(dirName string) string {
+	return filepath.Join(p.PrDirPath, dirName, "comments.json")
+}
+
 func (p Paths) MetaPath(dirName string) string {
 	return filepath.Join(p.IssuesDir, dirName, ".meta.json")
+}
+
+func (p Paths) PrMetaPath(dirName string) string {
+	return filepath.Join(p.PrDirPath, dirName, ".meta.json")
 }
 
 func (p Paths) RawIssuePath(number int) string {
@@ -51,7 +70,7 @@ func (p Paths) RawProjectPath(number int) string {
 }
 
 func (p Paths) EnsureLayout() error {
-	for _, dir := range []string{p.DesignDir, p.IssuesDir} {
+	for _, dir := range []string{p.DesignDir, p.IssuesDir, p.PrDirPath} {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return err
 		}
@@ -133,6 +152,24 @@ func itoa(n int) string {
 // ListIssueDirs returns all subdirectory names under IssuesDir.
 func (p Paths) ListIssueDirs() ([]string, error) {
 	entries, err := os.ReadDir(p.IssuesDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var dirs []string
+	for _, e := range entries {
+		if e.IsDir() {
+			dirs = append(dirs, e.Name())
+		}
+	}
+	return dirs, nil
+}
+
+// ListPrDirs returns all subdirectory names under PrDir.
+func (p Paths) ListPrDirs() ([]string, error) {
+	entries, err := os.ReadDir(p.PrDirPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil

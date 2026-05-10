@@ -71,15 +71,29 @@ func (a *App) Pull(ctx context.Context, opts PullOptions, numbers []string) erro
 
 // syncIssue writes issue.md, comments.json, .meta.json for a single remote issue.
 func (a *App) syncIssue(ctx context.Context, p paths.Paths, client *ghcli.Client, ri issue.RemoteIssue, opts PullOptions) error {
-	dirName := findOrCreateDirName(p, ri.Number)
-	issueDir := p.IssueDir(dirName)
+	var dirName string
+	var issueDir string
+	var mdPath string
+	var metaPath string
+	var commentsPath string
+
+	if ri.IsPullRequest {
+		dirName = findOrCreatePrDirName(p, ri.Number)
+		issueDir = p.PrDir(dirName)
+		mdPath = p.PrMDPath(dirName)
+		metaPath = p.PrMetaPath(dirName)
+		commentsPath = p.PrCommentsPath(dirName)
+	} else {
+		dirName = findOrCreateDirName(p, ri.Number)
+		issueDir = p.IssueDir(dirName)
+		mdPath = p.IssueMDPath(dirName)
+		metaPath = p.MetaPath(dirName)
+		commentsPath = p.CommentsPath(dirName)
+	}
 
 	if err := os.MkdirAll(issueDir, 0o755); err != nil {
 		return err
 	}
-
-	mdPath := p.IssueMDPath(dirName)
-	metaPath := p.MetaPath(dirName)
 
 	// --- Local change protection ---
 	if _, err := os.Stat(mdPath); err == nil {
@@ -109,7 +123,7 @@ func (a *App) syncIssue(ctx context.Context, p paths.Paths, client *ghcli.Client
 	}
 
 	// --- Write comments.json ---
-	if err := a.writeComments(ctx, p, dirName, client, ri.Number); err != nil {
+	if err := a.writeComments(ctx, commentsPath, client, ri.Number); err != nil {
 		fmt.Fprintf(a.Err, "#%d: failed to fetch comments: %v\n", ri.Number, err)
 	}
 
@@ -141,7 +155,7 @@ func (a *App) syncIssue(ctx context.Context, p paths.Paths, client *ghcli.Client
 	return nil
 }
 
-func (a *App) writeComments(ctx context.Context, p paths.Paths, dirName string, client *ghcli.Client, number int) error {
+func (a *App) writeComments(ctx context.Context, commentsPath string, client *ghcli.Client, number int) error {
 	comments, err := client.GetComments(ctx, number)
 	if err != nil {
 		return err
@@ -151,7 +165,7 @@ func (a *App) writeComments(ctx context.Context, p paths.Paths, dirName string, 
 		return err
 	}
 	data = append(data, '\n')
-	return os.WriteFile(p.CommentsPath(dirName), data, 0o644)
+	return os.WriteFile(commentsPath, data, 0o644)
 }
 
 func (a *App) saveRaw(p paths.Paths, ri issue.RemoteIssue) error {
@@ -171,6 +185,18 @@ func (a *App) saveRaw(p paths.Paths, ri issue.RemoteIssue) error {
 // or returns a new directory name "<number>" if none exists.
 func findOrCreateDirName(p paths.Paths, number int) string {
 	dirs, _ := p.ListIssueDirs()
+	for _, d := range dirs {
+		if paths.IssueDirNumber(d) == number {
+			return d
+		}
+	}
+	return paths.IssueDirName(number, "")
+}
+
+// findOrCreatePrDirName finds an existing PR directory by number prefix,
+// or returns a new directory name "<number>" if none exists.
+func findOrCreatePrDirName(p paths.Paths, number int) string {
+	dirs, _ := p.ListPrDirs()
 	for _, d := range dirs {
 		if paths.IssueDirNumber(d) == number {
 			return d

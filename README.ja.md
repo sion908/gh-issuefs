@@ -20,14 +20,19 @@ Issue をローカルファイルとして保持することで、AI ツール�
 
 ## 概要
 
-`gh-issuefs` は GitHub Issue を `.design/issues/` 配下のローカル Markdown ファイルとして同期します。  
-各 Issue は YAML frontmatter 付きの `issue.md` として保存されるため、コードと並べて編集・レビュー・管理が容易になります。
+`gh-issuefs` は GitHub Issue と Pull Request を `.design/` 配下のローカル Markdown ファイルとして同期します。  
+各 Issue/PR は YAML frontmatter 付きの `issue.md` として保存されるため、コードと並べて編集・レビュー・管理が容易になります。
 
 ```
 .design/
   config.toml
   issues/
     123_add_login_error_handling/
+      issue.md
+      comments.json
+      .meta.json
+  pr/
+    456_pr_title/
       issue.md
       comments.json
       .meta.json
@@ -161,6 +166,7 @@ default_template = ""   # .github/ISSUE_TEMPLATE/ のデフォルトテンプレ
 [data]
 root_dir   = ".design"
 issues_dir = "issues"
+pr_dir     = "pr"
 
 [sync]
 default_query        = "assignee:@me state:open"

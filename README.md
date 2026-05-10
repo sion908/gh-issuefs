@@ -19,14 +19,19 @@ By keeping issues as local files, you can leverage AI tools for planning, docume
 
 ## Overview
 
-`gh-issuefs` keeps GitHub Issues in sync with local Markdown files under `.design/issues/`.  
-Each issue is stored as `issue.md` with YAML frontmatter, making it easy to edit, review, and track alongside your code.
+`gh-issuefs` keeps GitHub Issues and Pull Requests in sync with local Markdown files under `.design/`.  
+Each issue/PR is stored as `issue.md` with YAML frontmatter, making it easy to edit, review, and track alongside your code.
 
 ```
 .design/
   config.toml
   issues/
     123_add_login_error_handling/
+      issue.md
+      comments.json
+      .meta.json
+  pr/
+    456_pr_title/
       issue.md
       comments.json
       .meta.json
@@ -160,6 +165,7 @@ default_template = ""   # default template from .github/ISSUE_TEMPLATE/
 [data]
 root_dir   = ".design"
 issues_dir = "issues"
+pr_dir     = "pr"
 
 [sync]
 default_query        = "assignee:@me state:open"

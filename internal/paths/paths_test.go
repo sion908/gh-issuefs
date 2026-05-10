@@ -7,7 +7,7 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	p := New("/root", ".design", "issues")
+	p := New("/root", ".design", "issues", "pr")
 
 	if p.Root != "/root" {
 		t.Errorf("expected Root /root, got %s", p.Root)
@@ -18,6 +18,9 @@ func TestNew(t *testing.T) {
 	if p.IssuesDir != "/root/.design/issues" {
 		t.Errorf("expected IssuesDir /root/.design/issues, got %s", p.IssuesDir)
 	}
+	if p.PrDirPath != "/root/.design/pr" {
+		t.Errorf("expected PrDirPath /root/.design/pr, got %s", p.PrDirPath)
+	}
 	if p.ConfigPath != "/root/.design/config.toml" {
 		t.Errorf("expected ConfigPath /root/.design/config.toml, got %s", p.ConfigPath)
 	}
@@ -27,7 +30,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestIssueDir(t *testing.T) {
-	p := New("/root", ".design", "issues")
+	p := New("/root", ".design", "issues", "pr")
 
 	result := p.IssueDir("123_test")
 	expected := "/root/.design/issues/123_test"
@@ -37,7 +40,7 @@ func TestIssueDir(t *testing.T) {
 }
 
 func TestIssueMDPath(t *testing.T) {
-	p := New("/root", ".design", "issues")
+	p := New("/root", ".design", "issues", "pr")
 
 	result := p.IssueMDPath("123_test")
 	expected := "/root/.design/issues/123_test/issue.md"
@@ -47,7 +50,7 @@ func TestIssueMDPath(t *testing.T) {
 }
 
 func TestCommentsPath(t *testing.T) {
-	p := New("/root", ".design", "issues")
+	p := New("/root", ".design", "issues", "pr")
 
 	result := p.CommentsPath("123_test")
 	expected := "/root/.design/issues/123_test/comments.json"
@@ -57,7 +60,7 @@ func TestCommentsPath(t *testing.T) {
 }
 
 func TestMetaPath(t *testing.T) {
-	p := New("/root", ".design", "issues")
+	p := New("/root", ".design", "issues", "pr")
 
 	result := p.MetaPath("123_test")
 	expected := "/root/.design/issues/123_test/.meta.json"
@@ -67,7 +70,7 @@ func TestMetaPath(t *testing.T) {
 }
 
 func TestRawIssuePath(t *testing.T) {
-	p := New("/root", ".design", "issues")
+	p := New("/root", ".design", "issues", "pr")
 
 	result := p.RawIssuePath(123)
 	expected := "/root/.design/raw/issues/123.json"
@@ -77,7 +80,7 @@ func TestRawIssuePath(t *testing.T) {
 }
 
 func TestRawProjectPath(t *testing.T) {
-	p := New("/root", ".design", "issues")
+	p := New("/root", ".design", "issues", "pr")
 
 	result := p.RawProjectPath(456)
 	expected := "/root/.design/raw/projects_v2/456.json"
@@ -88,7 +91,7 @@ func TestRawProjectPath(t *testing.T) {
 
 func TestEnsureLayout(t *testing.T) {
 	tmpDir := t.TempDir()
-	p := New(tmpDir, ".design", "issues")
+	p := New(tmpDir, ".design", "issues", "pr")
 
 	if err := p.EnsureLayout(); err != nil {
 		t.Fatalf("EnsureLayout failed: %v", err)
@@ -100,6 +103,9 @@ func TestEnsureLayout(t *testing.T) {
 	}
 	if _, err := os.Stat(p.IssuesDir); err != nil {
 		t.Errorf("IssuesDir not created: %v", err)
+	}
+	if _, err := os.Stat(p.PrDirPath); err != nil {
+		t.Errorf("PrDirPath not created: %v", err)
 	}
 }
 
@@ -234,7 +240,7 @@ func TestItoa(t *testing.T) {
 
 func TestListIssueDirs(t *testing.T) {
 	tmpDir := t.TempDir()
-	p := New(tmpDir, ".design", "issues")
+	p := New(tmpDir, ".design", "issues", "pr")
 
 	// Create issues directory with some subdirectories
 	if err := os.MkdirAll(p.IssuesDir, 0o755); err != nil {
@@ -279,7 +285,7 @@ func TestListIssueDirs(t *testing.T) {
 
 func TestListIssueDirs_NonExistent(t *testing.T) {
 	tmpDir := t.TempDir()
-	p := New(tmpDir, ".design", "issues")
+	p := New(tmpDir, ".design", "issues", "pr")
 
 	// Don't create issues directory
 	result, err := p.ListIssueDirs()

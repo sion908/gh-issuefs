@@ -41,13 +41,13 @@ func New(root string, runner ghcli.Runner, out, errOut io.Writer) *App {
 
 // loadConfig loads the local config, falling back to global, then defaults.
 func (a *App) loadConfig() (config.Config, error) {
-	p := paths.New(a.Root, ".design", "issues")
+	p := paths.New(a.Root, ".design", "issues", "pr")
 	return config.LoadWithFallback(p.ConfigPath)
 }
 
 // makePaths returns a Paths built from config.
 func (a *App) makePaths(cfg config.Config) paths.Paths {
-	return paths.New(a.Root, cfg.Data.RootDir, cfg.Data.IssuesDir)
+	return paths.New(a.Root, cfg.Data.RootDir, cfg.Data.IssuesDir, cfg.Data.PrDir)
 }
 
 // detectRepo resolves "owner/repo" via gh CLI.

@@ -20,6 +20,7 @@ type Config struct {
 type DataConfig struct {
 	RootDir   string `toml:"root_dir"`
 	IssuesDir string `toml:"issues_dir"`
+	PrDir     string `toml:"pr_dir"`
 }
 
 type SyncConfig struct {
@@ -54,6 +55,7 @@ func Default() Config {
 		Data: DataConfig{
 			RootDir:   ".design",
 			IssuesDir: "issues",
+			PrDir:     "pr",
 		},
 		Sync: SyncConfig{
 			DefaultQuery:        "assignee:@me state:open",
