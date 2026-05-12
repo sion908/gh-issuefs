@@ -42,7 +42,7 @@ func (p Paths) IssueMDPath(dirName string) string {
 }
 
 func (p Paths) PrMDPath(dirName string) string {
-	return filepath.Join(p.PrDirPath, dirName, "issue.md")
+	return filepath.Join(p.PrDirPath, dirName, "pr.md")
 }
 
 func (p Paths) CommentsPath(dirName string) string {

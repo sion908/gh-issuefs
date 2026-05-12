@@ -547,13 +547,13 @@ func TestSample(t *testing.T) {
 
 // graphQL レスポンスのヘルパー
 func graphQLIssueResp(number int, title, body, state string) string {
-	return `{"data":{"repository":{"issue":{` +
+	return `{"data":{"repository":{"issueOrPullRequest":{` +
 		`"number":` + itoa(number) + `,` +
 		`"title":"` + title + `",` +
 		`"body":"` + body + `",` +
 		`"state":"` + strings.ToUpper(state) + `",` +
 		`"url":"https://github.com/owner/repo/issues/` + itoa(number) + `",` +
-		`"__typename":"Issue",` +
+		`"typename":"Issue",` +
 		`"updatedAt":"2024-01-01T00:00:00Z",` +
 		`"labels":{"nodes":[]},` +
 		`"assignees":{"nodes":[]},` +

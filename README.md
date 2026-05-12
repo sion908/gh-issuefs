@@ -20,7 +20,7 @@ By keeping issues as local files, you can leverage AI tools for planning, docume
 ## Overview
 
 `gh-issuefs` keeps GitHub Issues and Pull Requests in sync with local Markdown files under `.design/`.  
-Each issue/PR is stored as `issue.md` with YAML frontmatter, making it easy to edit, review, and track alongside your code.
+Each issue is stored as `issue.md` and each PR as `pr.md` with YAML frontmatter, making it easy to edit, review, and track alongside your code.
 
 ```
 .design/
@@ -32,7 +32,7 @@ Each issue/PR is stored as `issue.md` with YAML frontmatter, making it easy to e
       .meta.json
   pr/
     456_pr_title/
-      issue.md
+      pr.md
       comments.json
       .meta.json
 ```

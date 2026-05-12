@@ -55,30 +55,55 @@ type apiComment struct {
 
 // --- Issue fetch ---
 
-// GetIssue fetches a single issue by number.
+// GetIssue fetches a single issue or pull request by number.
 func (c *Client) GetIssue(ctx context.Context, number int) (issue.RemoteIssue, error) {
 	owner, repo := splitRepo(c.repo)
 	query := `query($owner: String!, $repo: String!, $number: Int!) {
   repository(owner: $owner, name: $repo) {
-    issue(number: $number) {
-      number
-      title
-      body
-      state
-      url
-      isPullRequest: __typename
-      updatedAt
-      labels(first: 100) { nodes { name } }
-      assignees(first: 100) { nodes { login } }
-      milestone { title }
-      projectItems(first: 20) {
-        nodes {
-          project { title }
-          status: fieldValueByName(name: "Status") {
-            ... on ProjectV2ItemFieldSingleSelectValue { name }
+    issueOrPullRequest(number: $number) {
+      ... on Issue {
+        number
+        title
+        body
+        state
+        url
+        typename: __typename
+        updatedAt
+        labels(first: 100) { nodes { name } }
+        assignees(first: 100) { nodes { login } }
+        milestone { title }
+        projectItems(first: 20) {
+          nodes {
+            project { title }
+            status: fieldValueByName(name: "Status") {
+              ... on ProjectV2ItemFieldSingleSelectValue { name }
+            }
+            iteration: fieldValueByName(name: "Iteration") {
+              ... on ProjectV2ItemFieldIterationValue { title }
+            }
           }
-          iteration: fieldValueByName(name: "Iteration") {
-            ... on ProjectV2ItemFieldIterationValue { title }
+        }
+      }
+      ... on PullRequest {
+        number
+        title
+        body
+        state
+        url
+        typename: __typename
+        updatedAt
+        labels(first: 100) { nodes { name } }
+        assignees(first: 100) { nodes { login } }
+        milestone { title }
+        projectItems(first: 20) {
+          nodes {
+            project { title }
+            status: fieldValueByName(name: "Status") {
+              ... on ProjectV2ItemFieldSingleSelectValue { name }
+            }
+            iteration: fieldValueByName(name: "Iteration") {
+              ... on ProjectV2ItemFieldIterationValue { title }
+            }
           }
         }
       }
@@ -93,9 +118,9 @@ func (c *Client) GetIssue(ctx context.Context, number int) (issue.RemoteIssue, e
 	}
 	out, err := c.runner.Run(ctx, "gh", args...)
 	if err != nil {
-		return issue.RemoteIssue{}, err
+		return issue.RemoteIssue{}, fmt.Errorf("gh failed: %w", err)
 	}
-	return parseIssueGraphQL(out)
+	return parseIssueOrPRGraphQL(out)
 }
 
 // ListIssues fetches issues matching the given search query using REST API.
@@ -259,7 +284,7 @@ type issueNode struct {
 	Body     string `json:"body"`
 	State    string `json:"state"`
 	URL      string `json:"url"`
-	Typename string `json:"__typename"`
+	Typename string `json:"typename"`
 	UpdatedAt string `json:"updatedAt"`
 	Labels struct {
 		Nodes []struct {
@@ -325,11 +350,11 @@ func issueNodeToRemote(node issueNode) (issue.RemoteIssue, error) {
 	}, nil
 }
 
-func parseIssueGraphQL(out string) (issue.RemoteIssue, error) {
+func parseIssueOrPRGraphQL(out string) (issue.RemoteIssue, error) {
 	var resp struct {
 		Data struct {
 			Repository struct {
-				Issue *issueNode `json:"issue"`
+				IssueOrPullRequest *issueNode `json:"issueOrPullRequest"`
 			} `json:"repository"`
 		} `json:"data"`
 		Errors []struct {
@@ -342,10 +367,10 @@ func parseIssueGraphQL(out string) (issue.RemoteIssue, error) {
 	if len(resp.Errors) > 0 {
 		return issue.RemoteIssue{}, fmt.Errorf("GraphQL error: %s", resp.Errors[0].Message)
 	}
-	if resp.Data.Repository.Issue == nil {
-		return issue.RemoteIssue{}, fmt.Errorf("issue not found")
+	if resp.Data.Repository.IssueOrPullRequest == nil {
+		return issue.RemoteIssue{}, fmt.Errorf("issue or pull request not found")
 	}
-	return issueNodeToRemote(*resp.Data.Repository.Issue)
+	return issueNodeToRemote(*resp.Data.Repository.IssueOrPullRequest)
 }
 
 var issueURLPattern = regexp.MustCompile(`/issues/(\d+)`)

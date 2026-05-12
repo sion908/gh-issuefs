@@ -54,13 +54,13 @@ func TestGetIssue(t *testing.T) {
 		graphQLResp := `{
 			"data": {
 				"repository": {
-					"issue": {
+					"issueOrPullRequest": {
 						"number": 123,
 						"title": "Test Issue",
 						"body": "Test body",
 						"state": "OPEN",
 						"url": "https://github.com/owner/repo/issues/123",
-						"__typename": "Issue",
+						"typename": "Issue",
 						"updatedAt": "2024-01-01T00:00:00Z",
 						"labels": {
 							"nodes": [{"name": "bug"}]
@@ -271,18 +271,18 @@ func TestEditIssue(t *testing.T) {
 	})
 }
 
-func TestParseIssueGraphQL(t *testing.T) {
-	t.Run("valid response", func(t *testing.T) {
+func TestParseIssueOrPRGraphQL(t *testing.T) {
+	t.Run("valid issue response", func(t *testing.T) {
 		resp := `{
 			"data": {
 				"repository": {
-					"issue": {
+					"issueOrPullRequest": {
 						"number": 123,
 						"title": "Test",
 						"body": "Body",
 						"state": "OPEN",
 						"url": "https://github.com/owner/repo/issues/123",
-						"__typename": "Issue",
+						"typename": "Issue",
 						"updatedAt": "2024-01-01T00:00:00Z",
 						"labels": {"nodes": []},
 						"assignees": {"nodes": []},
@@ -292,31 +292,66 @@ func TestParseIssueGraphQL(t *testing.T) {
 				}
 			}
 		}`
-		ri, err := parseIssueGraphQL(resp)
+		ri, err := parseIssueOrPRGraphQL(resp)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		if ri.Number != 123 {
 			t.Errorf("expected number 123, got %d", ri.Number)
 		}
+		if ri.IsPullRequest {
+			t.Error("expected IsPullRequest false for Issue")
+		}
+	})
+
+	t.Run("valid pull request response", func(t *testing.T) {
+		resp := `{
+			"data": {
+				"repository": {
+					"issueOrPullRequest": {
+						"number": 169,
+						"title": "Test PR",
+						"body": "PR Body",
+						"state": "OPEN",
+						"url": "https://github.com/owner/repo/pull/169",
+						"typename": "PullRequest",
+						"updatedAt": "2024-01-01T00:00:00Z",
+						"labels": {"nodes": []},
+						"assignees": {"nodes": []},
+						"milestone": null,
+						"projectItems": {"nodes": []}
+					}
+				}
+			}
+		}`
+		ri, err := parseIssueOrPRGraphQL(resp)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if ri.Number != 169 {
+			t.Errorf("expected number 169, got %d", ri.Number)
+		}
+		if !ri.IsPullRequest {
+			t.Error("expected IsPullRequest true for PullRequest")
+		}
 	})
 
 	t.Run("GraphQL error", func(t *testing.T) {
 		resp := `{
-			"data": {"repository": {"issue": null}},
+			"data": {"repository": {"issueOrPullRequest": null}},
 			"errors": [{"message": "Not found"}]
 		}`
-		_, err := parseIssueGraphQL(resp)
+		_, err := parseIssueOrPRGraphQL(resp)
 		if err == nil {
 			t.Error("expected error, got nil")
 		}
 	})
 
-	t.Run("issue not found", func(t *testing.T) {
+	t.Run("not found", func(t *testing.T) {
 		resp := `{
-			"data": {"repository": {"issue": null}}
+			"data": {"repository": {"issueOrPullRequest": null}}
 		}`
-		_, err := parseIssueGraphQL(resp)
+		_, err := parseIssueOrPRGraphQL(resp)
 		if err == nil {
 			t.Error("expected error, got nil")
 		}

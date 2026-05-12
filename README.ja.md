@@ -21,7 +21,7 @@ Issue をローカルファイルとして保持することで、AI ツール�
 ## 概要
 
 `gh-issuefs` は GitHub Issue と Pull Request を `.design/` 配下のローカル Markdown ファイルとして同期します。  
-各 Issue/PR は YAML frontmatter 付きの `issue.md` として保存されるため、コードと並べて編集・レビュー・管理が容易になります。
+各 Issue は YAML frontmatter 付きの `issue.md`、各 PR は `pr.md` として保存されるため、コードと並べて編集・レビュー・管理が容易になります。
 
 ```
 .design/
@@ -33,7 +33,7 @@ Issue をローカルファイルとして保持することで、AI ツール�
       .meta.json
   pr/
     456_pr_title/
-      issue.md
+      pr.md
       comments.json
       .meta.json
 ```
