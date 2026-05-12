@@ -22,15 +22,19 @@ jobs:
 
       - name: Build Linux AMD64
         run: GOOS=linux GOARCH=amd64 go build -o gh-issuefs-linux-amd64 ./cmd/gh-issuefs
+        working-directory: ${{ github.workspace }}
 
       - name: Build Darwin AMD64
         run: GOOS=darwin GOARCH=amd64 go build -o gh-issuefs-darwin-amd64 ./cmd/gh-issuefs
+        working-directory: ${{ github.workspace }}
 
       - name: Build Darwin ARM64
         run: GOOS=darwin GOARCH=arm64 go build -o gh-issuefs-darwin-arm64 ./cmd/gh-issuefs
+        working-directory: ${{ github.workspace }}
 
       - name: Build Windows AMD64
         run: GOOS=windows GOARCH=amd64 go build -o gh-issuefs-windows-amd64.exe ./cmd/gh-issuefs
+        working-directory: ${{ github.workspace }}
 
       - name: Release
         uses: softprops/action-gh-release@v2
