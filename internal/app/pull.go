@@ -123,7 +123,7 @@ func (a *App) syncIssue(ctx context.Context, p paths.Paths, client *ghcli.Client
 	}
 
 	// --- Write comments.json ---
-	if err := a.writeComments(ctx, commentsPath, client, ri.Number); err != nil {
+	if err := a.writeComments(ctx, commentsPath, client, ri.Number, ri.IsPullRequest); err != nil {
 		fmt.Fprintf(a.Err, "#%d: failed to fetch comments: %v\n", ri.Number, err)
 	}
 
@@ -155,8 +155,8 @@ func (a *App) syncIssue(ctx context.Context, p paths.Paths, client *ghcli.Client
 	return nil
 }
 
-func (a *App) writeComments(ctx context.Context, commentsPath string, client *ghcli.Client, number int) error {
-	comments, err := client.GetComments(ctx, number)
+func (a *App) writeComments(ctx context.Context, commentsPath string, client *ghcli.Client, number int, isPullRequest bool) error {
+	comments, err := client.GetComments(ctx, number, isPullRequest)
 	if err != nil {
 		return err
 	}

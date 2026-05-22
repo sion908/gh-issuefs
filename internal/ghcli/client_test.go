@@ -177,7 +177,7 @@ func TestGetComments(t *testing.T) {
 		runner := &MockRunner{Output: commentsResp}
 		client := NewClient(runner, "owner/repo")
 
-		comments, err := client.GetComments(ctx, 123)
+		comments, err := client.GetComments(ctx, 123, false)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -192,13 +192,37 @@ func TestGetComments(t *testing.T) {
 		}
 	})
 
+	t.Run("pull request comments", func(t *testing.T) {
+		commentsResp := `[{
+			"node_id": "node456",
+			"user": {"login": "user2"},
+			"body": "PR comment",
+			"created_at": "2024-01-01T00:00:00Z",
+			"updated_at": "2024-01-01T00:00:00Z",
+			"html_url": "https://github.com/owner/repo/pull/456#comment-456"
+		}]`
+		runner := &MockRunner{Output: commentsResp}
+		client := NewClient(runner, "owner/repo")
+
+		comments, err := client.GetComments(ctx, 456, true)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(comments) != 1 {
+			t.Fatalf("expected 1 comment, got %d", len(comments))
+		}
+		if comments[0].ID != "node456" {
+			t.Errorf("expected id node456, got %s", comments[0].ID)
+		}
+	})
+
 	t.Run("paginated response", func(t *testing.T) {
 		// Simulate --paginate output (concatenated arrays)
 		commentsResp := `[{"node_id":"n1","user":{"login":"u1"},"body":"c1","created_at":"2024-01-01T00:00:00Z","updated_at":"2024-01-01T00:00:00Z","html_url":"url1"}][{"node_id":"n2","user":{"login":"u2"},"body":"c2","created_at":"2024-01-01T00:00:00Z","updated_at":"2024-01-01T00:00:00Z","html_url":"url2"}]`
 		runner := &MockRunner{Output: commentsResp}
 		client := NewClient(runner, "owner/repo")
 
-		comments, err := client.GetComments(ctx, 123)
+		comments, err := client.GetComments(ctx, 123, false)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -211,7 +235,7 @@ func TestGetComments(t *testing.T) {
 		runner := &MockRunner{Err: errors.New("gh failed")}
 		client := NewClient(runner, "owner/repo")
 
-		_, err := client.GetComments(ctx, 123)
+		_, err := client.GetComments(ctx, 123, false)
 		if err == nil {
 			t.Error("expected error, got nil")
 		}

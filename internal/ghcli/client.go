@@ -190,10 +190,15 @@ func (c *Client) ListIssues(ctx context.Context, searchQuery string) ([]issue.Re
 	return results, nil
 }
 
-// GetComments fetches comments for an issue.
-func (c *Client) GetComments(ctx context.Context, number int) ([]issue.Comment, error) {
+// GetComments fetches comments for an issue or pull request.
+func (c *Client) GetComments(ctx context.Context, number int, isPullRequest bool) ([]issue.Comment, error) {
 	owner, repo := splitRepo(c.repo)
-	endpoint := fmt.Sprintf("repos/%s/%s/issues/%d/comments", owner, repo, number)
+	var endpoint string
+	if isPullRequest {
+		endpoint = fmt.Sprintf("repos/%s/%s/pulls/%d/comments", owner, repo, number)
+	} else {
+		endpoint = fmt.Sprintf("repos/%s/%s/issues/%d/comments", owner, repo, number)
+	}
 	args := []string{"api", endpoint, "--paginate"}
 	out, err := c.runner.Run(ctx, "gh", args...)
 	if err != nil {
