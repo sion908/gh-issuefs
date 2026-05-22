@@ -164,3 +164,97 @@ func (a *App) getTemplateNames() ([]string, error) {
 	sort.Strings(names)
 	return names, nil
 }
+
+type SyncDocsOptions struct {
+	Remove bool
+}
+
+// SyncDocs syncs project documentation files to .design/docs/.
+func (a *App) SyncDocs(_ context.Context, opts SyncDocsOptions, files []string) error {
+	cfg, err := a.loadConfig()
+	if err != nil {
+		return err
+	}
+	p := a.makePaths(cfg)
+
+	docsDir := filepath.Join(p.DesignDir, "docs")
+	if err := os.MkdirAll(docsDir, 0o755); err != nil {
+		return fmt.Errorf("failed to create docs directory: %w", err)
+	}
+
+	// Default documentation files to sync
+	defaultDocs := []string{
+		"WORKFLOWS.md",
+		"SKILL_MANAGEMENT.md",
+		"README.md",
+		"README.ja.md",
+	}
+
+	var targetFiles []string
+	if len(files) > 0 {
+		targetFiles = files
+	} else {
+		targetFiles = defaultDocs
+	}
+
+	synced := 0
+	for _, filename := range targetFiles {
+		srcPath := filepath.Join(a.Root, filename)
+		dstPath := filepath.Join(docsDir, filename)
+
+		// Check if source exists
+		if _, err := os.Stat(srcPath); err != nil {
+			if os.IsNotExist(err) {
+				fmt.Fprintf(a.Out, "skipping %s (not found in project root)\n", filename)
+				continue
+			}
+			return fmt.Errorf("failed to stat %s: %w", srcPath, err)
+		}
+
+		// Copy file
+		srcData, err := os.ReadFile(srcPath)
+		if err != nil {
+			return fmt.Errorf("failed to read %s: %w", srcPath, err)
+		}
+
+		if err := os.WriteFile(dstPath, srcData, 0o644); err != nil {
+			return fmt.Errorf("failed to write %s: %w", dstPath, err)
+		}
+
+		fmt.Fprintf(a.Out, "synced %s\n", filename)
+		synced++
+	}
+
+	// Remove files not in target if --remove is set
+	if opts.Remove {
+		entries, err := os.ReadDir(docsDir)
+		if err != nil {
+			return fmt.Errorf("failed to read docs directory: %w", err)
+		}
+
+		targetSet := make(map[string]bool)
+		for _, f := range targetFiles {
+			targetSet[f] = true
+		}
+
+		for _, e := range entries {
+			if e.IsDir() {
+				continue
+			}
+			name := e.Name()
+			if !targetSet[name] {
+				removePath := filepath.Join(docsDir, name)
+				if err := os.Remove(removePath); err != nil {
+					fmt.Fprintf(a.Err, "failed to remove %s: %v\n", name, err)
+				} else {
+					fmt.Fprintf(a.Out, "removed %s\n", name)
+				}
+			}
+		}
+	}
+
+	if synced == 0 {
+		fmt.Fprintln(a.Out, "no files synced")
+	}
+	return nil
+}
