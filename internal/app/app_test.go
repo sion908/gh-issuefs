@@ -841,6 +841,119 @@ func TestPush(t *testing.T) {
 	})
 }
 
+func TestSyncDocs(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("syncs default docs", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		out := &bytes.Buffer{}
+		app := New(tmpDir, &mockRunner{}, out, &bytes.Buffer{})
+
+		// Create some default docs in project root
+		workflowContent := "# Workflows\nTest content"
+		if err := os.WriteFile(filepath.Join(tmpDir, "WORKFLOWS.md"), []byte(workflowContent), 0o644); err != nil {
+			t.Fatalf("failed to create WORKFLOWS.md: %v", err)
+		}
+
+		err := app.SyncDocs(ctx, SyncDocsOptions{}, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		// Check that docs directory was created
+		docsDir := filepath.Join(tmpDir, ".design", "docs")
+		if _, err := os.Stat(docsDir); err != nil {
+			t.Errorf("docs directory not created: %v", err)
+		}
+
+		// Check that WORKFLOWS.md was synced
+		syncedPath := filepath.Join(docsDir, "WORKFLOWS.md")
+		data, err := os.ReadFile(syncedPath)
+		if err != nil {
+			t.Errorf("WORKFLOWS.md not synced: %v", err)
+		}
+		if string(data) != workflowContent {
+			t.Errorf("content mismatch, got %s", string(data))
+		}
+
+		if !strings.Contains(out.String(), "synced WORKFLOWS.md") {
+			t.Errorf("expected sync message, got %s", out.String())
+		}
+	})
+
+	t.Run("syncs specific files", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		out := &bytes.Buffer{}
+		app := New(tmpDir, &mockRunner{}, out, &bytes.Buffer{})
+
+		// Create specific file
+		testContent := "# Test Doc\nContent"
+		if err := os.WriteFile(filepath.Join(tmpDir, "TEST.md"), []byte(testContent), 0o644); err != nil {
+			t.Fatalf("failed to create TEST.md: %v", err)
+		}
+
+		err := app.SyncDocs(ctx, SyncDocsOptions{}, []string{"TEST.md"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		syncedPath := filepath.Join(tmpDir, ".design", "docs", "TEST.md")
+		if _, err := os.Stat(syncedPath); err != nil {
+			t.Errorf("TEST.md not synced: %v", err)
+		}
+	})
+
+	t.Run("skips non-existent files", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		out := &bytes.Buffer{}
+		app := New(tmpDir, &mockRunner{}, out, &bytes.Buffer{})
+
+		err := app.SyncDocs(ctx, SyncDocsOptions{}, []string{"NONEXISTENT.md"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if !strings.Contains(out.String(), "skipping NONEXISTENT.md") {
+			t.Errorf("expected skip message, got %s", out.String())
+		}
+	})
+
+	t.Run("removes files with --remove", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		out := &bytes.Buffer{}
+		app := New(tmpDir, &mockRunner{}, out, &bytes.Buffer{})
+
+		// Create docs directory with an extra file
+		docsDir := filepath.Join(tmpDir, ".design", "docs")
+		if err := os.MkdirAll(docsDir, 0o755); err != nil {
+			t.Fatalf("failed to create docs dir: %v", err)
+		}
+		if err := os.WriteFile(filepath.Join(docsDir, "OLD.md"), []byte("old"), 0o644); err != nil {
+			t.Fatalf("failed to create OLD.md: %v", err)
+		}
+
+		// Sync only WORKFLOWS.md
+		if err := os.WriteFile(filepath.Join(tmpDir, "WORKFLOWS.md"), []byte("new"), 0o644); err != nil {
+			t.Fatalf("failed to create WORKFLOWS.md: %v", err)
+		}
+
+		err := app.SyncDocs(ctx, SyncDocsOptions{Remove: true}, []string{"WORKFLOWS.md"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		// Check that OLD.md was removed
+		oldPath := filepath.Join(docsDir, "OLD.md")
+		if _, err := os.Stat(oldPath); err == nil {
+			t.Error("OLD.md should have been removed")
+		}
+
+		if !strings.Contains(out.String(), "removed OLD.md") {
+			t.Errorf("expected remove message, got %s", out.String())
+		}
+	})
+}
+
 // Helper function
 func stringPtr(s string) *string {
 	return &s

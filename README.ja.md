@@ -156,6 +156,29 @@ gh issuefs config set-template default.md
 
 ---
 
+### `sync-docs`
+
+プロジェクトのドキュメントファイルを `.design/docs/` に同期します。
+
+```bash
+# デフォルトのドキュメントをすべて同期（WORKFLOWS.md, SKILL_MANAGEMENT.md, README.md, README.ja.md）
+gh issuefs sync-docs
+
+# 特定のファイルを同期
+gh issuefs sync-docs WORKFLOWS.md SKILL_MANAGEMENT.md
+
+# 特定のファイルを同期し、.design/docs/ 内の他のファイルを削除
+gh issuefs sync-docs WORKFLOWS.md --remove
+```
+
+デフォルトで同期されるファイル:
+- `WORKFLOWS.md`
+- `SKILL_MANAGEMENT.md`
+- `README.md`
+- `README.ja.md`
+
+---
+
 ## 設定ファイル
 
 `init` 時に `.design/config.toml` が作成されます。

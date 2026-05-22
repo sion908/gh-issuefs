@@ -155,6 +155,29 @@ gh issuefs config set-template default.md
 
 ---
 
+### `sync-docs`
+
+Sync project documentation files to `.design/docs/`.
+
+```bash
+# Sync all default docs (WORKFLOWS.md, SKILL_MANAGEMENT.md, README.md, README.ja.md)
+gh issuefs sync-docs
+
+# Sync specific files
+gh issuefs sync-docs WORKFLOWS.md SKILL_MANAGEMENT.md
+
+# Sync specific files and remove others from .design/docs/
+gh issuefs sync-docs WORKFLOWS.md --remove
+```
+
+Default files synced:
+- `WORKFLOWS.md`
+- `SKILL_MANAGEMENT.md`
+- `README.md`
+- `README.ja.md`
+
+---
+
 ## Configuration
 
 `config.toml` is created at `.design/config.toml` on `init`.
