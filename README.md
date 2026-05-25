@@ -95,6 +95,7 @@ gh issuefs pull --save-raw
 ```
 
 - Pull requests can also be pulled (read-only).
+- For pull requests, both conversation comments and code review comments are fetched.
 - If `issue.md` has local uncommitted changes, they are automatically backed up to `issue.local.md` before overwriting.
 
 ---

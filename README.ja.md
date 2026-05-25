@@ -96,6 +96,7 @@ gh issuefs pull --save-raw
 ```
 
 - Pull Request も pull できます（読み取り専用）。
+- Pull Request の場合、会話コメントとコードレビューコメントの両方が取得されます。
 - `issue.md` にローカルの未同期変更がある場合、上書き前に自動的に `issue.local.md` としてバックアップされます。
 
 ---
