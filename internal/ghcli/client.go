@@ -45,12 +45,23 @@ type apiMilestone struct {
 }
 
 type apiComment struct {
-	NodeID    string `json:"node_id"`
+	NodeID    string  `json:"node_id"`
 	User      apiUser `json:"user"`
-	Body      string `json:"body"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
-	HTMLURL   string `json:"html_url"`
+	Body      string  `json:"body"`
+	CreatedAt string  `json:"created_at"`
+	UpdatedAt string  `json:"updated_at"`
+	HTMLURL   string  `json:"html_url"`
+}
+
+type apiReviewComment struct {
+	NodeID    string  `json:"node_id"`
+	User      apiUser `json:"user"`
+	Body      string  `json:"body"`
+	CreatedAt string  `json:"created_at"`
+	UpdatedAt string  `json:"updated_at"`
+	HTMLURL   string  `json:"html_url"`
+	Path      string  `json:"path"`
+	DiffHunk  string  `json:"diff_hunk"`
 }
 
 // --- Issue fetch ---
@@ -191,33 +202,27 @@ func (c *Client) ListIssues(ctx context.Context, searchQuery string) ([]issue.Re
 }
 
 // GetComments fetches comments for an issue or pull request.
+// For pull requests, both conversation comments and code review comments are returned.
 func (c *Client) GetComments(ctx context.Context, number int, isPullRequest bool) ([]issue.Comment, error) {
 	owner, repo := splitRepo(c.repo)
-	var endpoint string
-	if isPullRequest {
-		endpoint = fmt.Sprintf("repos/%s/%s/pulls/%d/comments", owner, repo, number)
-	} else {
-		endpoint = fmt.Sprintf("repos/%s/%s/issues/%d/comments", owner, repo, number)
-	}
-	args := []string{"api", endpoint, "--paginate"}
-	out, err := c.runner.Run(ctx, "gh", args...)
+
+	// Fetch conversation comments (works for both issues and pull requests)
+	convEndpoint := fmt.Sprintf("repos/%s/%s/issues/%d/comments", owner, repo, number)
+	convOut, err := c.runner.Run(ctx, "gh", "api", convEndpoint, "--paginate")
 	if err != nil {
 		return nil, err
 	}
-
-	// --paginate produces concatenated JSON arrays; wrap them
-	merged, err := mergeJSONArrays(out)
+	merged, err := mergeJSONArrays(convOut)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse comments: %w", err)
 	}
-
-	var raw []apiComment
-	if err := json.Unmarshal(merged, &raw); err != nil {
+	var rawConv []apiComment
+	if err := json.Unmarshal(merged, &rawConv); err != nil {
 		return nil, err
 	}
 
-	comments := make([]issue.Comment, 0, len(raw))
-	for _, c := range raw {
+	comments := make([]issue.Comment, 0, len(rawConv))
+	for _, c := range rawConv {
 		var createdAt, updatedAt time.Time
 		createdAt, _ = time.Parse(time.RFC3339, c.CreatedAt)
 		updatedAt, _ = time.Parse(time.RFC3339, c.UpdatedAt)
@@ -228,6 +233,40 @@ func (c *Client) GetComments(ctx context.Context, number int, isPullRequest bool
 			CreatedAt: createdAt,
 			UpdatedAt: updatedAt,
 			URL:       c.HTMLURL,
+		})
+	}
+
+	if !isPullRequest {
+		return comments, nil
+	}
+
+	// Fetch code review comments (pull requests only)
+	reviewEndpoint := fmt.Sprintf("repos/%s/%s/pulls/%d/comments", owner, repo, number)
+	reviewOut, err := c.runner.Run(ctx, "gh", "api", reviewEndpoint, "--paginate")
+	if err != nil {
+		return nil, err
+	}
+	mergedReview, err := mergeJSONArrays(reviewOut)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse review comments: %w", err)
+	}
+	var rawReview []apiReviewComment
+	if err := json.Unmarshal(mergedReview, &rawReview); err != nil {
+		return nil, err
+	}
+	for _, c := range rawReview {
+		var createdAt, updatedAt time.Time
+		createdAt, _ = time.Parse(time.RFC3339, c.CreatedAt)
+		updatedAt, _ = time.Parse(time.RFC3339, c.UpdatedAt)
+		comments = append(comments, issue.Comment{
+			ID:        c.NodeID,
+			Author:    c.User.Login,
+			Body:      c.Body,
+			CreatedAt: createdAt,
+			UpdatedAt: updatedAt,
+			URL:       c.HTMLURL,
+			Path:      c.Path,
+			DiffHunk:  c.DiffHunk,
 		})
 	}
 	return comments, nil

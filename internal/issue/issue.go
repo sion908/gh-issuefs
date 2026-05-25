@@ -144,7 +144,7 @@ type RemoteIssue struct {
 	ProjectsV2    []ProjectV2Item
 }
 
-// Comment is a single GitHub Issue comment.
+// Comment is a single GitHub Issue or Pull Request comment.
 type Comment struct {
 	ID        string
 	Author    string
@@ -152,6 +152,9 @@ type Comment struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	URL       string
+	// Review comment fields (Pull Request code review comments only)
+	Path     string `json:",omitempty"`
+	DiffHunk string `json:",omitempty"`
 }
 
 // separator は yaml.Marshal が生成する区切り文字列を使う用途で参照する

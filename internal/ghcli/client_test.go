@@ -8,11 +8,21 @@ import (
 
 // MockRunner is a mock implementation of Runner for testing
 type MockRunner struct {
-	Output string
-	Err    error
+	Output  string
+	Err     error
+	Outputs []string // if set, returns outputs sequentially
+	callIdx int
 }
 
 func (m *MockRunner) Run(ctx context.Context, name string, args ...string) (string, error) {
+	if len(m.Outputs) > 0 {
+		idx := m.callIdx
+		if idx >= len(m.Outputs) {
+			idx = len(m.Outputs) - 1
+		}
+		m.callIdx++
+		return m.Outputs[idx], m.Err
+	}
 	return m.Output, m.Err
 }
 
@@ -192,27 +202,46 @@ func TestGetComments(t *testing.T) {
 		}
 	})
 
-	t.Run("pull request comments", func(t *testing.T) {
-		commentsResp := `[{
+	t.Run("pull request comments with review comments", func(t *testing.T) {
+		convResp := `[{
 			"node_id": "node456",
 			"user": {"login": "user2"},
-			"body": "PR comment",
+			"body": "PR conversation comment",
 			"created_at": "2024-01-01T00:00:00Z",
 			"updated_at": "2024-01-01T00:00:00Z",
-			"html_url": "https://github.com/owner/repo/pull/456#comment-456"
+			"html_url": "https://github.com/owner/repo/pull/456#issuecomment-456"
 		}]`
-		runner := &MockRunner{Output: commentsResp}
+		reviewResp := `[{
+			"node_id": "node789",
+			"user": {"login": "user3"},
+			"body": "PR review comment",
+			"created_at": "2024-01-02T00:00:00Z",
+			"updated_at": "2024-01-02T00:00:00Z",
+			"html_url": "https://github.com/owner/repo/pull/456#discussion_r789",
+			"path": "main.go",
+			"diff_hunk": "@@ -1,3 +1,3 @@"
+		}]`
+		runner := &MockRunner{Outputs: []string{convResp, reviewResp}}
 		client := NewClient(runner, "owner/repo")
 
 		comments, err := client.GetComments(ctx, 456, true)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if len(comments) != 1 {
-			t.Fatalf("expected 1 comment, got %d", len(comments))
+		if len(comments) != 2 {
+			t.Fatalf("expected 2 comments, got %d", len(comments))
 		}
 		if comments[0].ID != "node456" {
 			t.Errorf("expected id node456, got %s", comments[0].ID)
+		}
+		if comments[1].ID != "node789" {
+			t.Errorf("expected id node789, got %s", comments[1].ID)
+		}
+		if comments[1].Path != "main.go" {
+			t.Errorf("expected path main.go, got %s", comments[1].Path)
+		}
+		if comments[1].DiffHunk != "@@ -1,3 +1,3 @@" {
+			t.Errorf("expected diff_hunk, got %s", comments[1].DiffHunk)
 		}
 	})
 
