@@ -369,6 +369,8 @@ func TestParseIssueOrPRGraphQL(t *testing.T) {
 						"url": "https://github.com/owner/repo/pull/169",
 						"typename": "PullRequest",
 						"updatedAt": "2024-01-01T00:00:00Z",
+						"baseRefName": "main",
+						"headRefName": "feature-branch",
 						"labels": {"nodes": []},
 						"assignees": {"nodes": []},
 						"milestone": null,
@@ -386,6 +388,12 @@ func TestParseIssueOrPRGraphQL(t *testing.T) {
 		}
 		if !ri.IsPullRequest {
 			t.Error("expected IsPullRequest true for PullRequest")
+		}
+		if ri.BaseBranch != "main" {
+			t.Errorf("expected BaseBranch main, got %s", ri.BaseBranch)
+		}
+		if ri.HeadBranch != "feature-branch" {
+			t.Errorf("expected HeadBranch feature-branch, got %s", ri.HeadBranch)
 		}
 	})
 

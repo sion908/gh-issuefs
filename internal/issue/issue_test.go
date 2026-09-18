@@ -41,6 +41,27 @@ This is the body`,
 			},
 		},
 		{
+			name: "pull request frontmatter with branches",
+			data: `---
+number: 456
+title: Test PR
+state: open
+base_branch: main
+head_branch: feature/branch
+---
+
+PR body`,
+			wantErr: false,
+			check: func(iss Issue) bool {
+				return iss.FrontMatter.Number == 456 &&
+					iss.FrontMatter.Title == "Test PR" &&
+					iss.FrontMatter.State == "open" &&
+					iss.FrontMatter.BaseBranch == "main" &&
+					iss.FrontMatter.HeadBranch == "feature/branch" &&
+					iss.Body == "PR body"
+			},
+		},
+		{
 			name: "no frontmatter",
 			data: `Just plain markdown without frontmatter`,
 			wantErr: false,
@@ -144,7 +165,33 @@ func TestRender(t *testing.T) {
 					contains(s, "number: 123") &&
 					contains(s, "title: Test Issue") &&
 					contains(s, "state: open") &&
+					!contains(s, "base_branch") &&
+					!contains(s, "head_branch") &&
 					contains(s, "Test body")
+			},
+		},
+		{
+			name: "render with pull request branches",
+			iss: Issue{
+				FrontMatter: FrontMatter{
+					Number:     456,
+					Title:      "PR Feature",
+					State:      "open",
+					BaseBranch: "main",
+					HeadBranch: "feature/foo",
+				},
+				Body: "PR body",
+			},
+			wantErr: false,
+			check: func(data []byte) bool {
+				s := string(data)
+				return contains(s, "---") &&
+					contains(s, "number: 456") &&
+					contains(s, "title: PR Feature") &&
+					contains(s, "state: open") &&
+					contains(s, "base_branch: main") &&
+					contains(s, "head_branch: feature/foo") &&
+					contains(s, "PR body")
 			},
 		},
 		{
@@ -311,8 +358,10 @@ func TestMeta(t *testing.T) {
 		ID:               "test-id",
 		Title:            "Test Issue",
 		State:            "open",
-		URL:              "https://github.com/test/repo/issues/123",
-		IsPullRequest:    false,
+		URL:              "https://github.com/test/repo/pull/123",
+		IsPullRequest:    true,
+		BaseBranch:       "main",
+		HeadBranch:       "feature-branch",
 		UpdatedAt:        now,
 		LastSyncedAt:     now,
 		IssueMDSHA256:    "abc123",
@@ -338,6 +387,12 @@ func TestMeta(t *testing.T) {
 	}
 	if loaded.Title != meta.Title {
 		t.Errorf("expected title %s, got %s", meta.Title, loaded.Title)
+	}
+	if loaded.BaseBranch != meta.BaseBranch {
+		t.Errorf("expected base_branch %s, got %s", meta.BaseBranch, loaded.BaseBranch)
+	}
+	if loaded.HeadBranch != meta.HeadBranch {
+		t.Errorf("expected head_branch %s, got %s", meta.HeadBranch, loaded.HeadBranch)
 	}
 }
 

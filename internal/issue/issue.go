@@ -21,6 +21,8 @@ type FrontMatter struct {
 	Number     int             `yaml:"number,omitempty"`
 	Title      string          `yaml:"title"`
 	State      string          `yaml:"state,omitempty"`
+	BaseBranch string          `yaml:"base_branch,omitempty"`
+	HeadBranch string          `yaml:"head_branch,omitempty"`
 	Labels     []string        `yaml:"labels,omitempty"`
 	Assignees  []string        `yaml:"assignees,omitempty"`
 	Milestone  *string         `yaml:"milestone"`
@@ -137,6 +139,8 @@ type RemoteIssue struct {
 	State         string
 	URL           string
 	IsPullRequest bool
+	BaseBranch    string
+	HeadBranch    string
 	UpdatedAt     time.Time
 	Labels        []string
 	Assignees     []string

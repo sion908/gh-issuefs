@@ -103,6 +103,8 @@ func (c *Client) GetIssue(ctx context.Context, number int) (issue.RemoteIssue, e
         url
         typename: __typename
         updatedAt
+        baseRefName
+        headRefName
         labels(first: 100) { nodes { name } }
         assignees(first: 100) { nodes { login } }
         milestone { title }
@@ -323,14 +325,16 @@ type projectItemNode struct {
 }
 
 type issueNode struct {
-	Number   int    `json:"number"`
-	Title    string `json:"title"`
-	Body     string `json:"body"`
-	State    string `json:"state"`
-	URL      string `json:"url"`
-	Typename string `json:"typename"`
-	UpdatedAt string `json:"updatedAt"`
-	Labels struct {
+	Number      int    `json:"number"`
+	Title       string `json:"title"`
+	Body        string `json:"body"`
+	State       string `json:"state"`
+	URL         string `json:"url"`
+	Typename    string `json:"typename"`
+	UpdatedAt   string `json:"updatedAt"`
+	BaseRefName string `json:"baseRefName"`
+	HeadRefName string `json:"headRefName"`
+	Labels      struct {
 		Nodes []struct {
 			Name string `json:"name"`
 		} `json:"nodes"`
@@ -386,6 +390,8 @@ func issueNodeToRemote(node issueNode) (issue.RemoteIssue, error) {
 		State:         strings.ToLower(node.State),
 		URL:           node.URL,
 		IsPullRequest: node.Typename == "PullRequest",
+		BaseBranch:    node.BaseRefName,
+		HeadBranch:    node.HeadRefName,
 		UpdatedAt:     updatedAt,
 		Labels:        labels,
 		Assignees:     assignees,

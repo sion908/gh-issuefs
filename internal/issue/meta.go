@@ -16,6 +16,8 @@ type Meta struct {
 	State            string    `json:"state"`
 	URL              string    `json:"url"`
 	IsPullRequest    bool      `json:"is_pull_request"`
+	BaseBranch       string    `json:"base_branch,omitempty"`
+	HeadBranch       string    `json:"head_branch,omitempty"`
 	UpdatedAt        time.Time `json:"updated_at"`
 	LastSyncedAt     time.Time `json:"last_synced_at"`
 	IssueMDSHA256    string    `json:"issue_md_sha256"`

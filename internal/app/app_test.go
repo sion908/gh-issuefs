@@ -561,6 +561,23 @@ func graphQLIssueResp(number int, title, body, state string) string {
 		`"projectItems":{"nodes":[]}}}}}`
 }
 
+func graphQLPRResp(number int, title, body, state, baseBranch, headBranch string) string {
+	return `{"data":{"repository":{"issueOrPullRequest":{` +
+		`"number":` + itoa(number) + `,` +
+		`"title":"` + title + `",` +
+		`"body":"` + body + `",` +
+		`"state":"` + strings.ToUpper(state) + `",` +
+		`"url":"https://github.com/owner/repo/pull/` + itoa(number) + `",` +
+		`"typename":"PullRequest",` +
+		`"updatedAt":"2024-01-01T00:00:00Z",` +
+		`"baseRefName":"` + baseBranch + `",` +
+		`"headRefName":"` + headBranch + `",` +
+		`"labels":{"nodes":[]},` +
+		`"assignees":{"nodes":[]},` +
+		`"milestone":null,` +
+		`"projectItems":{"nodes":[]}}}}}`
+}
+
 func TestPull(t *testing.T) {
 	ctx := context.Background()
 
@@ -587,6 +604,56 @@ func TestPull(t *testing.T) {
 		}
 		if !strings.Contains(out.String(), "pulled #42") {
 			t.Errorf("expected pulled message, got %s", out.String())
+		}
+	})
+
+	t.Run("pulls single pull request with branches", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		out := &bytes.Buffer{}
+		errOut := &bytes.Buffer{}
+
+		runner := &seqRunner{responses: []mockResponse{
+			{Output: "owner/repo\n"}, // DetectRepo
+			{Output: graphQLPRResp(99, "Test PR", "PR Body", "open", "main", "feature/my-branch")}, // GetIssue #99
+			{Output: "[]"}, // GetComments
+		}}
+		app := New(tmpDir, runner, out, errOut)
+
+		err := app.Pull(ctx, PullOptions{}, []string{"99"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		mdPath := filepath.Join(tmpDir, ".design", "pr", "99", "pr.md")
+		data, err := os.ReadFile(mdPath)
+		if err != nil {
+			t.Fatalf("pr.md not created: %v", err)
+		}
+
+		iss, err := issue.Parse(data)
+		if err != nil {
+			t.Fatalf("failed to parse pr.md: %v", err)
+		}
+		if iss.FrontMatter.BaseBranch != "main" {
+			t.Errorf("expected base_branch main, got %s", iss.FrontMatter.BaseBranch)
+		}
+		if iss.FrontMatter.HeadBranch != "feature/my-branch" {
+			t.Errorf("expected head_branch feature/my-branch, got %s", iss.FrontMatter.HeadBranch)
+		}
+
+		metaPath := filepath.Join(tmpDir, ".design", "pr", "99", ".meta.json")
+		meta, err := issue.LoadMeta(metaPath)
+		if err != nil {
+			t.Fatalf("failed to load .meta.json: %v", err)
+		}
+		if meta.BaseBranch != "main" {
+			t.Errorf("expected meta base_branch main, got %s", meta.BaseBranch)
+		}
+		if meta.HeadBranch != "feature/my-branch" {
+			t.Errorf("expected meta head_branch feature/my-branch, got %s", meta.HeadBranch)
+		}
+		if !meta.IsPullRequest {
+			t.Errorf("expected meta is_pull_request true")
 		}
 	})
 
