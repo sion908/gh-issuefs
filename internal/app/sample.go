@@ -12,11 +12,23 @@ import (
 // Sample generates a new issue template directory under .design/issues/<name>/.
 // If template is non-empty, loads from .github/ISSUE_TEMPLATE/<template>.
 func (a *App) Sample(_ context.Context, name, template string) error {
+	if err := validateLocalName(name); err != nil {
+		return fmt.Errorf("invalid issue name: %w", err)
+	}
 	cfg, err := a.loadConfig()
 	if err != nil {
 		return err
 	}
 	p := a.makePaths(cfg)
+	templateToUse := template
+	if templateToUse == "" {
+		templateToUse = cfg.DefaultTemplate
+	}
+	if templateToUse != "" {
+		if err := validateLocalName(templateToUse); err != nil {
+			return fmt.Errorf("invalid template name: %w", err)
+		}
+	}
 
 	dir := p.IssueDir(name)
 	if _, err := os.Stat(dir); err == nil {
@@ -29,11 +41,6 @@ func (a *App) Sample(_ context.Context, name, template string) error {
 	title := issue.TitleFromDirName(name)
 	fm := issue.SampleFrontMatter(title)
 	var body string
-
-	templateToUse := template
-	if templateToUse == "" {
-		templateToUse = cfg.DefaultTemplate
-	}
 
 	if templateToUse != "" {
 		templatePath := filepath.Join(a.Root, ".github", "ISSUE_TEMPLATE", templateToUse)

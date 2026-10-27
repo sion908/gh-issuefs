@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/sion908/gh-issuefs/internal/config"
@@ -86,6 +87,9 @@ func (a *App) SetTemplate(ctx context.Context, template string) error {
 			return err
 		}
 		template = selected
+	}
+	if err := validateLocalName(template); err != nil {
+		return fmt.Errorf("invalid template name: %w", err)
 	}
 
 	cfg.DefaultTemplate = template
@@ -177,11 +181,6 @@ func (a *App) SyncDocs(_ context.Context, opts SyncDocsOptions, files []string) 
 	}
 	p := a.makePaths(cfg)
 
-	docsDir := filepath.Join(p.DesignDir, "docs")
-	if err := os.MkdirAll(docsDir, 0o755); err != nil {
-		return fmt.Errorf("failed to create docs directory: %w", err)
-	}
-
 	// Default documentation files to sync
 	defaultDocs := []string{
 		"WORKFLOWS.md",
@@ -195,6 +194,16 @@ func (a *App) SyncDocs(_ context.Context, opts SyncDocsOptions, files []string) 
 		targetFiles = files
 	} else {
 		targetFiles = defaultDocs
+	}
+	for _, filename := range targetFiles {
+		if err := validateLocalName(filename); err != nil {
+			return fmt.Errorf("invalid documentation file name %q: %w", filename, err)
+		}
+	}
+
+	docsDir := filepath.Join(p.DesignDir, "docs")
+	if err := os.MkdirAll(docsDir, 0o755); err != nil {
+		return fmt.Errorf("failed to create docs directory: %w", err)
 	}
 
 	synced := 0
@@ -255,6 +264,13 @@ func (a *App) SyncDocs(_ context.Context, opts SyncDocsOptions, files []string) 
 
 	if synced == 0 {
 		fmt.Fprintln(a.Out, "no files synced")
+	}
+	return nil
+}
+
+func validateLocalName(name string) error {
+	if !filepath.IsLocal(name) || name != filepath.Base(name) || strings.ContainsAny(name, `/\`) {
+		return fmt.Errorf("must be a single local path component")
 	}
 	return nil
 }

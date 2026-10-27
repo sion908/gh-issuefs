@@ -42,7 +42,7 @@ Each issue is stored as `issue.md` and each PR as `pr.md` with YAML frontmatter,
 ## Requirements
 
 - [GitHub CLI](https://cli.github.com/) (`gh`) — must be authenticated
-- Go 1.22+ (only needed to build from source)
+- Go 1.26.10+ (only needed to build from source)
 
 ---
 

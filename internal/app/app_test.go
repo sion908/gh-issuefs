@@ -545,6 +545,42 @@ func TestSample(t *testing.T) {
 	})
 }
 
+func TestRejectPathTraversalArguments(t *testing.T) {
+	ctx := context.Background()
+	root := t.TempDir()
+	a := New(root, &mockRunner{}, &bytes.Buffer{}, &bytes.Buffer{})
+
+	for _, name := range []string{"../outside", "nested/issue", "/tmp/outside", "..", `..\outside`} {
+		if err := a.Sample(ctx, name, ""); err == nil {
+			t.Errorf("Sample accepted issue name %q", name)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(root, ".design")); !os.IsNotExist(err) {
+		t.Fatalf("invalid issue name created .design: %v", err)
+	}
+
+	if err := a.Sample(ctx, "safe", "../../secret.md"); err == nil {
+		t.Error("Sample accepted a traversing template name")
+	}
+	if _, err := os.Stat(filepath.Join(root, ".design")); !os.IsNotExist(err) {
+		t.Fatalf("invalid template name created .design: %v", err)
+	}
+
+	if err := a.SetTemplate(ctx, "../secret.md"); err == nil {
+		t.Error("SetTemplate accepted a traversing template name")
+	}
+	if _, err := os.Stat(filepath.Join(root, ".design", "config.toml")); !os.IsNotExist(err) {
+		t.Fatalf("invalid template name created config: %v", err)
+	}
+
+	if err := a.SyncDocs(ctx, SyncDocsOptions{}, []string{"../secret.md"}); err == nil {
+		t.Error("SyncDocs accepted a traversing file name")
+	}
+	if _, err := os.Stat(filepath.Join(root, ".design", "docs")); !os.IsNotExist(err) {
+		t.Fatalf("invalid documentation name created docs: %v", err)
+	}
+}
+
 // graphQL レスポンスのヘルパー
 func graphQLIssueResp(number int, title, body, state string) string {
 	return `{"data":{"repository":{"issueOrPullRequest":{` +
@@ -587,9 +623,9 @@ func TestPull(t *testing.T) {
 		errOut := &bytes.Buffer{}
 
 		runner := &seqRunner{responses: []mockResponse{
-			{Output: "owner/repo\n"},                                      // DetectRepo
+			{Output: "owner/repo\n"}, // DetectRepo
 			{Output: graphQLIssueResp(42, "Test Issue", "Body", "open")}, // GetIssue #42
-			{Output: "[]"},                                                // GetComments
+			{Output: "[]"}, // GetComments
 		}}
 		app := New(tmpDir, runner, out, errOut)
 
@@ -888,8 +924,8 @@ func TestPush(t *testing.T) {
 		}
 
 		runner := &seqRunner{responses: []mockResponse{
-			{Output: "owner/repo\n"},                                // DetectRepo
-			{Output: "https://github.com/owner/repo/issues/99\n"},  // CreateIssue
+			{Output: "owner/repo\n"},                              // DetectRepo
+			{Output: "https://github.com/owner/repo/issues/99\n"}, // CreateIssue
 		}}
 		app := New(tmpDir, runner, out, &bytes.Buffer{})
 
@@ -1025,4 +1061,3 @@ func TestSyncDocs(t *testing.T) {
 func stringPtr(s string) *string {
 	return &s
 }
-
