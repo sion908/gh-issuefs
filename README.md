@@ -63,6 +63,14 @@ gh extension install .
 
 ---
 
+## AI agents
+
+This repository includes a [gh-issuefs skill](.agents/skills/gh-issuefs/SKILL.md) that explains local and remote writes, safe previews, and command-result checks. To make it available while an agent works in another repository, copy the `gh-issuefs` skill directory into that repository's `.agents/skills/` directory. Installing the `gh` extension alone does not install the skill.
+
+Use `gh issuefs <command> --help` for the command's current defaults and side effects.
+
+---
+
 ## Commands
 
 ### `init`
@@ -96,7 +104,7 @@ gh issuefs pull --save-raw
 
 - Pull requests can also be pulled (read-only).
 - For pull requests, both conversation comments and code review comments are fetched.
-- If `issue.md` has local uncommitted changes, they are automatically backed up to `issue.local.md` before overwriting.
+- If a previously synced `issue.md` has local changes, it is backed up to `issue.local.md` before overwriting.
 
 ---
 

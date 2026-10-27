@@ -16,8 +16,8 @@ var (
 )
 
 type initCmd struct {
-	Owner string `long:"owner" description:"Repository owner"`
-	Repo  string `long:"repo" description:"Repository name"`
+	Owner string `long:"owner" description:"Repository owner (detected from gh when omitted)"`
+	Repo  string `long:"repo" description:"Repository name (detected from gh when omitted)"`
 }
 
 func (c *initCmd) Execute(_ []string) error {
@@ -25,8 +25,8 @@ func (c *initCmd) Execute(_ []string) error {
 }
 
 type configCmd struct {
-	ListTemplates *listTemplatesCmd `command:"list-templates" description:"List available templates"`
-	SetTemplate   *setTemplateCmd  `command:"set-template" description:"Set default template"`
+	ListTemplates *listTemplatesCmd `command:"list-templates" description:"List files in .github/ISSUE_TEMPLATE/"`
+	SetTemplate   *setTemplateCmd   `command:"set-template" description:"Set the default issue template" long-description:"Pass a filename for non-interactive use; omitting it opens a selection prompt. Example: gh issuefs config set-template bug_report.md"`
 }
 
 func (c *configCmd) Execute(_ []string) error {
@@ -50,7 +50,7 @@ func (c *setTemplateCmd) Execute(_ []string) error {
 }
 
 type sampleCmd struct {
-	Template string `long:"template" description:"Template file name from .github/ISSUE_TEMPLATE/"`
+	Template   string `long:"template" description:"Filename in .github/ISSUE_TEMPLATE/ (overrides the configured default)"`
 	Positional struct {
 		Name string `positional-arg-name:"name" required:"true"`
 	} `positional-args:"true"`
@@ -64,7 +64,7 @@ type pullCmd struct {
 	Positional struct {
 		Numbers []string `positional-arg-name:"number"`
 	} `positional-args:"true"`
-	SaveRaw bool `long:"save-raw" description:"Save raw API responses"`
+	SaveRaw bool `long:"save-raw" description:"Also save the fetched issue data under .design/raw/"`
 }
 
 func (c *pullCmd) Execute(_ []string) error {
@@ -75,8 +75,8 @@ type pushCmd struct {
 	Positional struct {
 		Numbers []string `positional-arg-name:"number"`
 	} `positional-args:"true"`
-	New    bool `long:"new" description:"Create new issues from unnumbered directories"`
-	DryRun bool `long:"dry-run" description:"Show what would be pushed without pushing"`
+	New    bool `long:"new" description:"Create GitHub issues from ALL unnumbered issue directories"`
+	DryRun bool `long:"dry-run" description:"Preview candidate writes without sending them to GitHub"`
 }
 
 func (c *pushCmd) Execute(_ []string) error {
@@ -87,7 +87,7 @@ type syncDocsCmd struct {
 	Positional struct {
 		Files []string `positional-arg-name:"file"`
 	} `positional-args:"true"`
-	Remove bool `long:"remove" description:"Remove files not in target list"`
+	Remove bool `long:"remove" description:"Delete other files in the local .design/docs/ directory"`
 }
 
 func (c *syncDocsCmd) Execute(_ []string) error {
@@ -95,12 +95,12 @@ func (c *syncDocsCmd) Execute(_ []string) error {
 }
 
 type options struct {
-	Init     initCmd     `command:"init"     description:"Initialize gh-design in the current repository"`
-	Config   configCmd   `command:"config"   description:"Manage configuration"`
-	Sample   sampleCmd   `command:"sample"   description:"Generate a new issue template"`
-	Pull     pullCmd     `command:"pull"     description:"Pull issues from GitHub"`
-	Push     pushCmd     `command:"push"     description:"Push issues to GitHub"`
-	SyncDocs syncDocsCmd `command:"sync-docs" description:"Sync project documentation to .design/docs/"`
+	Init     initCmd     `command:"init" description:"Create local gh-issuefs configuration" long-description:"Create .design/config.toml and local issue/PR directories. Detects owner and repo through gh unless both are supplied. Example: gh issuefs init"`
+	Config   configCmd   `command:"config" description:"Show or change the default template" long-description:"With no subcommand, print the configured default template. Use list-templates or set-template to inspect or change it. Example: gh issuefs config set-template bug_report.md"`
+	Sample   sampleCmd   `command:"sample" description:"Create a local issue draft" long-description:"Write .design/issues/<name>/issue.md. This does not create a GitHub issue; push --new does that later. Example: gh issuefs sample add_login_error_handling"`
+	Pull     pullCmd     `command:"pull" description:"Fetch issues and PRs into local files" long-description:"With numbers, fetch those issues or PRs. Without numbers, use sync.default_query from config (default: assignee:@me state:open). Writes local issue.md/pr.md and comments.json. Previously synced, locally modified issue.md is backed up before replacement. Example: gh issuefs pull 123"`
+	Push     pushCmd     `command:"push" description:"Write local issue title and body to GitHub" long-description:"Without numbers, push every changed numbered issue directory. PRs are read-only. Use --dry-run to preview; --new creates GitHub issues from every unnumbered directory, not just one. Push does not check for newer remote edits. Example: gh issuefs push --dry-run 123"`
+	SyncDocs syncDocsCmd `command:"sync-docs" description:"Copy root documentation into .design/docs/" long-description:"With no filenames, copy WORKFLOWS.md, SKILL_MANAGEMENT.md, README.md, and README.ja.md when present. --remove deletes other local files in .design/docs/. Example: gh issuefs sync-docs README.md"`
 }
 
 func main() {
@@ -116,6 +116,8 @@ func main() {
 
 	var opts options
 	parser := flags.NewParser(&opts, flags.Default)
+	parser.LongDescription = "Sync GitHub Issues and Pull Requests as local Markdown. Pull changes local files; push writes to GitHub. Run a command with --help for its defaults and side effects."
+	parser.Find("config").SubcommandsOptional = true
 
 	if _, err := parser.Parse(); err != nil {
 		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {

@@ -57,7 +57,7 @@ func (a *App) Push(ctx context.Context, opts PushOptions, numbers []string) erro
 		}
 	}
 
-	pushed := 0
+	candidates := 0
 	for _, dirName := range targets {
 		changed, err := a.pushIssue(ctx, p, client, dirName, opts)
 		if err != nil {
@@ -65,16 +65,17 @@ func (a *App) Push(ctx context.Context, opts PushOptions, numbers []string) erro
 			continue
 		}
 		if changed {
-			pushed++
+			candidates++
 		}
 	}
-	if pushed == 0 {
+	if candidates == 0 {
 		fmt.Fprintln(a.Out, "nothing to push")
 	}
 	return nil
 }
 
-// pushIssue pushes a single numbered issue directory. Returns true if a push was performed.
+// pushIssue handles a single numbered issue directory. Returns true if it was
+// pushed or previewed as a dry-run candidate.
 func (a *App) pushIssue(ctx context.Context, p paths.Paths, client *ghcli.Client, dirName string, opts PushOptions) (bool, error) {
 	mdPath := p.IssueMDPath(dirName)
 	metaPath := p.MetaPath(dirName)
@@ -117,7 +118,7 @@ func (a *App) pushIssue(ctx context.Context, p paths.Paths, client *ghcli.Client
 
 	if opts.DryRun {
 		fmt.Fprintf(a.Out, "[dry-run] would push #%d\n", number)
-		return false, nil
+		return true, nil
 	}
 
 	if err := client.EditIssue(ctx, number, iss.FrontMatter.Title, iss.Body); err != nil {
@@ -162,12 +163,11 @@ func (a *App) pushNew(ctx context.Context, p paths.Paths, client *ghcli.Client, 
 			continue
 		}
 
-		fmt.Fprintf(a.Out, "creating issue: %s\n", iss.FrontMatter.Title)
-
 		if opts.DryRun {
-			fmt.Fprintf(a.Out, "[dry-run] would create issue from %s\n", dirName)
+			fmt.Fprintf(a.Out, "[dry-run] would create issue from %s: %s\n", dirName, iss.FrontMatter.Title)
 			continue
 		}
+		fmt.Fprintf(a.Out, "creating issue: %s\n", iss.FrontMatter.Title)
 
 		number, nodeID, err := client.CreateIssue(ctx, iss.FrontMatter.Title, iss.Body)
 		if err != nil {

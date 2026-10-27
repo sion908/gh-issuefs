@@ -899,6 +899,9 @@ func TestPush(t *testing.T) {
 		if !strings.Contains(out.String(), "[dry-run]") {
 			t.Errorf("expected dry-run message, got %s", out.String())
 		}
+		if strings.Contains(out.String(), "nothing to push") {
+			t.Errorf("dry-run candidate was contradicted by nothing to push: %s", out.String())
+		}
 	})
 
 	t.Run("push --new creates new issue and renames dir", func(t *testing.T) {

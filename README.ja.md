@@ -64,6 +64,14 @@ gh extension install .
 
 ---
 
+## AI エージェント向け
+
+このリポジトリには [gh-issuefs skill](.agents/skills/gh-issuefs/SKILL.md) を同梱しています。ローカルと GitHub への書き込みの違い、事前確認、結果の確認方法を記載しています。別のリポジトリで AI に使わせる場合は、`gh-issuefs` skill ディレクトリをそのリポジトリの `.agents/skills/` にコピーしてください。`gh` extension のインストールだけでは skill は導入されません。
+
+コマンドごとの既定動作と副作用は `gh issuefs <command> --help` でも確認できます。
+
+---
+
 ## コマンド
 
 ### `init`
@@ -97,7 +105,7 @@ gh issuefs pull --save-raw
 
 - Pull Request も pull できます（読み取り専用）。
 - Pull Request の場合、会話コメントとコードレビューコメントの両方が取得されます。
-- `issue.md` にローカルの未同期変更がある場合、上書き前に自動的に `issue.local.md` としてバックアップされます。
+- 同期済みの `issue.md` にローカル変更がある場合、上書き前に `issue.local.md` としてバックアップされます。
 
 ---
 
